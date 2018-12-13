@@ -1,38 +1,52 @@
-"""Linear regression models."""
+"""
+Module supporting linear models.
+
+Author: Ryan Strauss
+"""
+import warnings
+
 import numpy as np
 
-from ..metrics import mse
-from ..optimizers.base import get_optimizer
-from ..utils import batch
-
-MAX_ITERATIONS = 1000
+from ..data import batch
+from ..metrics.regression import r_squared
 
 
-class LinearRegressor:
+class SGDRegressor:
+    """
+    Linear model fitted by minimizing loss with Stochastic Gradient Descent.
+    """
 
-    def __init__(self, alpha, C, fit_intercept=False, epochs=1000, tol=1e-3, optimizer='sgd'):
-        self.alpha = alpha
-        self.C = C
+    def __init__(self, lr=1e-5, fit_intercept=True, max_iter=1000, tol=1e-3):
+        """
+        Args:
+            lr: The learning rate. Defaults to 1e-5.
+            fit_intercept: Whether or not to fit the intercept term. Defaults to True.
+            max_iter: Maximum number of loops over the training data (epochs). Defaults to 1000.
+            tol: The stopping criterion. If it is not None, the iterations will stop when the change is theta (weights)
+                 is less than tol. Defaults 1e-3.
+        """
+        self.lr = lr
         self.fit_intercept = fit_intercept
-        self.epochs = epochs
+        self.max_iter = max_iter
         self.tol = tol
-        self.optimizer = get_optimizer(optimizer)
         self.theta = None
 
-    def fit(self, X, y):
-        """Fit linear regression model.
+    def fit(self, X, y, batch_size=1):
+        """
+        Fit linear regression model.
 
         Args:
-            X (ndarray, list): Training data
-            y (ndarray, list): Target values
+            X (ndarray, list): Training data.
+            y (ndarray, list): Target values.
+            batch_size (int): SGD batch size. Defaults to 1.
 
         Returns:
             self: Returns an instance of self.
         """
         if not isinstance(X, (np.ndarray, list)):
-            raise ValueError('X must be of type list or ndarray, but found {}'.format(type(X)))
+            raise TypeError('X must be of type list or ndarray, but found {}'.format(type(X)))
         if not isinstance(y, (np.ndarray, list)):
-            raise ValueError('y must be of type list or ndarray, but found {}'.format(type(y)))
+            raise TypeError('y must be of type list or ndarray, but found {}'.format(type(y)))
 
         if not isinstance(X, np.ndarray):
             X = np.array(X)
@@ -45,22 +59,55 @@ class LinearRegressor:
 
         # Initialize the weights
         if self.theta is None:
-            self.theta = np.random.uniform((X.shape[0],))
+            self.theta = np.random.uniform(size=(X.shape[1],))
 
-        steps = 0
-        while steps < self.epochs:
-            for batch_X, batch_y in batch(X, y):
-                preds = self.predict(X)
+        # Perform gradient descent
+        iteration = 0
+        delta_theta = np.inf
+        while True:
+            if iteration >= self.max_iter:
+                warnings.warn('Maximum number of iterations reached.')
+                break
+
+            for batch_X, batch_y in batch(X, y, batch_size=batch_size):
+                if delta_theta < self.tol:
+                    break
+
+                preds = np.dot(batch_X, self.theta)
+                error = preds - batch_y
+                gradients = batch_X.T.dot(error) / batch_size
+
+                update = self.theta - self.lr * gradients
+                delta_theta = np.absolute(update - self.theta).mean()
+                self.theta = update
+
+            iteration += 1
 
         return self
 
     def predict(self, X):
-        """Predict using the model.
+        """
+        Predict using the model.
 
         Args:
-            X (ndarray, shape (n_samples, n_features)): Samples.
+            X (ndarray, shape (n_samples, n_features)): Examples to predict on.
 
         Returns:
             C (ndarray, shape (n_samples,)): Returns predicted values.
         """
+        if self.fit_intercept:
+            X = np.insert(X, 0, 1, axis=1)
         return np.dot(X, self.theta)
+
+    def score(self, X, y):
+        """
+        Evaluates the model using the coefficient of determination (r-squared).
+
+        Args:
+            X (ndarray): The test data features.
+            y (ndarray): The test data targets.
+
+        Returns:
+            score (float): Returns the coefficient of determination R^2 of the prediction.
+        """
+        return r_squared(y, self.predict(X))
