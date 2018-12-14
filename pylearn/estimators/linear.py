@@ -1,5 +1,4 @@
-"""
-Module supporting linear models.
+"""Module supporting linear models.
 
 Author: Ryan Strauss
 """
@@ -12,33 +11,41 @@ from ..metrics.regression import r_squared
 
 
 class SGDRegressor:
-    """
-    Linear model fitted by minimizing loss with Stochastic Gradient Descent.
-    """
+    """Linear model fitted by minimizing loss with Stochastic Gradient Descent."""
 
-    def __init__(self, lr=1e-5, fit_intercept=True, max_iter=1000, tol=1e-3):
+    _VALID_PENALTIES = ['l2', 'l1']
+
+    def __init__(self, penalty='l2', alpha=1e-4, lr=1e-5, fit_intercept=True, max_iter=1000, tol=1e-3, shuffle=True):
         """
         Args:
-            lr: The learning rate. Defaults to 1e-5.
-            fit_intercept: Whether or not to fit the intercept term. Defaults to True.
-            max_iter: Maximum number of loops over the training data (epochs). Defaults to 1000.
-            tol: The stopping criterion. If it is not None, the iterations will stop when the change is theta (weights)
-                 is less than tol. Defaults 1e-3.
+            penalty (str): The penalty (aka regularization term) to be used. Defaults to 'l2'.
+            alpha (float): Constant that multiplies the regularization term. Defaults to 1e-4.
+            lr (float): The initial learning rate. Defaults to 1e-5.
+            fit_intercept (bool): Whether or not to fit the intercept term. Defaults to True.
+            max_iter (int): Maximum number of loops over the training data (epochs). Defaults to 1000.
+            tol (float): The stopping criterion. If it is not None, the iterations will stop when
+                         (loss > previous_loss - tol). Defaults to to 1e-3.
+            shuffle (bool): Whether or not the training data should be shuffled after each epoch. Defaults to True.
         """
+        if penalty is not None and penalty not in self._VALID_PENALTIES:
+            raise ValueError('Penalty should be one of {}.'.format(self._VALID_PENALTIES))
+
+        self.penalty = penalty
+        self.alpha = alpha
         self.lr = lr
         self.fit_intercept = fit_intercept
         self.max_iter = max_iter
         self.tol = tol
+        self.shuffle = shuffle
+
         self.theta = None
 
-    def fit(self, X, y, batch_size=1):
-        """
-        Fit linear regression model.
+    def fit(self, X, y):
+        """Fit linear regression model.
 
         Args:
             X (ndarray, list): Training data.
             y (ndarray, list): Target values.
-            batch_size (int): SGD batch size. Defaults to 1.
 
         Returns:
             self: Returns an instance of self.
@@ -63,31 +70,46 @@ class SGDRegressor:
 
         # Perform gradient descent
         iteration = 0
-        delta_theta = np.inf
+        previous_loss = np.inf
         while True:
             if iteration >= self.max_iter:
                 warnings.warn('Maximum number of iterations reached.')
                 break
 
-            for batch_X, batch_y in batch(X, y, batch_size=batch_size):
-                if delta_theta < self.tol:
-                    break
+            # Shuffle the data before each epoch
+            if self.shuffle:
+                indices = np.random.permutation(len(X))
+                X = X[indices]
+                y = y[indices]
 
+            for batch_X, batch_y in batch(X, y, batch_size=1):
                 preds = np.dot(batch_X, self.theta)
-                error = preds - batch_y
-                gradients = batch_X.T.dot(error) / batch_size
+                loss = preds - batch_y
+                if loss > previous_loss - self.tol:
+                    return self
 
-                update = self.theta - self.lr * gradients
-                delta_theta = np.absolute(update - self.theta).mean()
-                self.theta = update
+                gradients = batch_X.T.dot(loss)
+                if self.fit_intercept and self.penalty is not None:
+                    if self.penalty == 'l2':
+                        penalty = 2 * self.theta[1:]
+                    elif self.penalty == 'l1':
+                        indices = self.theta[1:] < 0
+                        penalty = np.copy(self.theta[1:])
+                        penalty[indices] = np.negative(penalty)[indices]
+                    else:
+                        penalty = 0
+
+                    self.theta[0] -= self.lr * gradients[0]
+                    self.theta[1:] -= self.lr * gradients[1:] + self.alpha * penalty
+                else:
+                    self.theta -= self.lr * gradients
 
             iteration += 1
 
         return self
 
     def predict(self, X):
-        """
-        Predict using the model.
+        """Predict using the model.
 
         Args:
             X (ndarray, shape (n_samples, n_features)): Examples to predict on.
@@ -100,8 +122,7 @@ class SGDRegressor:
         return np.dot(X, self.theta)
 
     def score(self, X, y):
-        """
-        Evaluates the model using the coefficient of determination (r-squared).
+        """Evaluates the model using the coefficient of determination (r-squared).
 
         Args:
             X (ndarray): The test data features.

@@ -1,12 +1,12 @@
-"""
-Metrics to assess performance on regression task.
+"""Metrics to assess performance on regression task.
+
+Author: Ryan Strauss
 """
 import numpy as np
 
 
 def mse(y_true, y_pred):
-    """
-    Mean squared error regression loss.
+    """Mean squared error regression loss.
 
     Args:
         y_true (ndarray): Ground truth (correct) target values.
@@ -20,8 +20,7 @@ def mse(y_true, y_pred):
 
 
 def mae(y_true, y_pred):
-    """
-        Mean absolute error regression loss.
+    """Mean absolute error regression loss.
 
         Args:
             y_true (ndarray): Ground truth (correct) target values.
@@ -34,8 +33,7 @@ def mae(y_true, y_pred):
 
 
 def r_squared(y_true, y_pred):
-    """
-    R^2 (coefficient of determination) regression score function.
+    """R^2 (coefficient of determination) regression score function.
 
     Best possible score is 1.0 and it can be negative (because the
     model can be arbitrarily worse). A constant model that always
