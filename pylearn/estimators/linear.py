@@ -10,15 +10,15 @@ from ..data import batch
 from ..metrics.regression import r_squared
 
 
-class SGDRegressor:
-    """Linear model fitted by minimizing loss with Stochastic Gradient Descent."""
+class _SGDEstimator:
+    """Base class for linear models that optimize with Stochastic Gradient Descent."""
 
     _VALID_PENALTIES = ['l2', 'l1']
 
-    def __init__(self, penalty='l2', alpha=1e-4, lr=1e-5, fit_intercept=True, max_iter=1000, tol=1e-3, shuffle=True):
+    def __init__(self, penalty, alpha, lr, fit_intercept, max_iter, tol, shuffle):
         """
         Args:
-            penalty (str): The penalty (aka regularization term) to be used. Defaults to 'l2'.
+            penalty (str, None): The penalty (aka regularization term) to be used. Defaults to 'l2'.
             alpha (float): Constant that multiplies the regularization term. Defaults to 1e-4.
             lr (float): The initial learning rate. Defaults to 1e-5.
             fit_intercept (bool): Whether or not to fit the intercept term. Defaults to True.
@@ -40,8 +40,11 @@ class SGDRegressor:
 
         self.theta = None
 
+    def _gradients(self, X, error):
+        raise NotImplementedError
+
     def fit(self, X, y):
-        """Fit linear regression model.
+        """Fit linear model.
 
         Args:
             X (ndarray, list): Training data.
@@ -84,18 +87,17 @@ class SGDRegressor:
 
             for batch_X, batch_y in batch(X, y, batch_size=1):
                 preds = np.dot(batch_X, self.theta)
-                loss = preds - batch_y
-                if loss > previous_loss - self.tol:
+                error = preds - batch_y
+                if error > previous_loss - self.tol:
                     return self
 
-                gradients = batch_X.T.dot(loss)
+                gradients = error.dot(batch_X)
                 if self.fit_intercept and self.penalty is not None:
                     if self.penalty == 'l2':
                         penalty = 2 * self.theta[1:]
                     elif self.penalty == 'l1':
-                        indices = self.theta[1:] < 0
-                        penalty = np.copy(self.theta[1:])
-                        penalty[indices] = np.negative(penalty)[indices]
+                        # TODO: Implement L1 penalty
+                        penalty = 0
                     else:
                         penalty = 0
 
@@ -117,18 +119,34 @@ class SGDRegressor:
         Returns:
             C (ndarray, shape (n_samples,)): Returns predicted values.
         """
-        if self.fit_intercept:
-            X = np.insert(X, 0, 1, axis=1)
-        return np.dot(X, self.theta)
+        raise NotImplementedError
 
     def score(self, X, y):
-        """Evaluates the model using the coefficient of determination (r-squared).
+        """Evaluates the model using its `score` metric.
 
         Args:
             X (ndarray): The test data features.
             y (ndarray): The test data targets.
 
         Returns:
-            score (float): Returns the coefficient of determination R^2 of the prediction.
+            score (float): The evaluation score.
         """
+        raise NotImplementedError
+
+
+class SGDRegressor(_SGDEstimator):
+    """Linear regression model fitted by minimizing loss with Stochastic Gradient Descent."""
+
+    def __init__(self, penalty='l2', alpha=1e-4, lr=1e-5, fit_intercept=True, max_iter=1000, tol=1e-3, shuffle=True):
+        super().__init__(penalty, alpha, lr, fit_intercept, max_iter, tol, shuffle)
+
+    def _gradients(self, X, error):
+        return error.dot(X)
+
+    def predict(self, X):
+        if self.fit_intercept:
+            X = np.insert(X, 0, 1, axis=1)
+        return X.dot(self.theta)
+
+    def score(self, X, y):
         return r_squared(y, self.predict(X))
