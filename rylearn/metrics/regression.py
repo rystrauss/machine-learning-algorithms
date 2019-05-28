@@ -17,8 +17,9 @@ def mse(y_true, y_pred):
         y_pred (ndarray): Estimated target values.
 
     Returns:
-        loss (float): A non-negative floating point value (the best value is 0.0), or an array of floating point
-                      values, one for each individual target.
+        loss (float): A non-negative floating point value (the best
+        value is 0.0), or an array of floating point values, one for each
+        individual target.
     """
     return np.average(np.square(y_true - y_pred))
 
@@ -31,7 +32,8 @@ def mae(y_true, y_pred):
             y_pred (ndarray): Estimated target values.
 
         Returns:
-            loss (float):  A positive floating point value (the best value is 0.0).
+            loss (float):  A positive floating point value (the best
+            value is 0.0).
         """
     return np.average(np.abs(y_true - y_pred))
 

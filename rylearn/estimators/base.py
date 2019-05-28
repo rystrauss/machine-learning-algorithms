@@ -27,7 +27,8 @@ class BaseEstimator(ABC):
         """Makes predictions with the model.
 
         Args:
-            x: A 2-dimentional matrix containing the examples to make predictions on.
+            x: A 2-dimentional matrix containing the examples to make
+            predictions on.
 
         Returns:
             The predicted targets.
@@ -43,6 +44,7 @@ class BaseEstimator(ABC):
             y: A vector that contains the target values.
 
         Returns:
-            The model's evaluation score (the metric will vary based on the type of model).
+            The model's evaluation score (the metric will vary based on
+            the type of model).
         """
         pass

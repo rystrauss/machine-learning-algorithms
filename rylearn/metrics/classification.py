@@ -22,8 +22,10 @@ def accuracy_score(y_true, y_pred):
 def log_loss(y_true, y_pred):
     """Log loss, aka logistic loss or cross-entropy loss.
 
-    This is the loss function used in logistic regression, defined as the negative log-likelihood of the true labels
-    given a probabilistic classifier's predictions. This log loss is only defined for two labels.
+    This is the loss function used in logistic regression, defined as the
+    negative log-likelihood of the true labels
+    given a probabilistic classifier's predictions. This log loss is only
+    defined for two labels.
 
     Args:
         y_true: Ground truth (correct) labels.
