@@ -8,6 +8,7 @@ numpy = "*"
 scipy = "*"
 scikit-learn = "*"
 pandas = "*"
+tqdm = "*"
 
 [dev-packages]
 

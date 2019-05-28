@@ -1,8 +1,12 @@
-"""Metrics to assess performance on regression task.
+"""Metrics to assess performance on regression tasks.
 
 Author: Ryan Strauss
 """
 import numpy as np
+
+
+def squared_loss(y_true, y_pred):
+    return (y_pred - y_true) ** 2
 
 
 def mse(y_true, y_pred):
