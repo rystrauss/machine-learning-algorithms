@@ -7,10 +7,10 @@ from abc import ABC, abstractmethod
 import numpy as np
 from tqdm import tqdm
 
-from .base import BaseEstimator
-from ..activations import sigmoid
-from ..data import batch
-from ..metrics import r_squared, accuracy_score
+from rylearn.activations import sigmoid
+from rylearn.data import batch
+from rylearn.estimators.base import BaseEstimator
+from rylearn.metrics import r_squared, accuracy_score
 
 _VALID_PENALTIES = ['l2', 'l1']
 

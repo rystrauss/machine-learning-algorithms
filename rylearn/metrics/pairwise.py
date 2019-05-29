@@ -16,3 +16,7 @@ def euclidean_distance(x, y):
 
 def manhattan_distance(x, y):
     return np.sum(np.abs(x - y))
+
+
+def squared_distance(x, y):
+    return np.sum(np.square(x - y))
