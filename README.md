@@ -15,3 +15,4 @@ Below is a list of the currently implemented algorithms:
 
  * Linear Regression via SGD
  * Logistic Regression via SGD (binary classification only)
+ * k-Nearest Neighbors (k-d tree)

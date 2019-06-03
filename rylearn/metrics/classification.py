@@ -16,7 +16,7 @@ def accuracy_score(y_true, y_pred):
     Returns:
         score (float): The fraction of correctly classified samples.
     """
-    return 1 - (np.logical_xor(y_true, y_pred).sum() / len(y_true))
+    return np.sum(y_true == y_pred) / len(y_true)
 
 
 def log_loss(y_true, y_pred):
