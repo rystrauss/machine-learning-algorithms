@@ -125,7 +125,7 @@ class SGDEstimator(BaseEstimator, ABC):
                     if self.penalty == 'l2':
                         penalty = 2 * self.theta[1:]
                     elif self.penalty == 'l1':
-                        penalty = 1
+                        penalty = np.sign(self.theta[1:])
 
                     penalty /= batch_size
 
